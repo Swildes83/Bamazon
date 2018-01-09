@@ -23,14 +23,10 @@ connection.connect(function (err) {
   console.log("connected as id " + connection.threadId);
 });
 
-
-
 // Display All Items inside Database and sell an item to customer
 connection.query('SELECT * FROM Products', function (err, res) {
 
-  // Error Handler
   if (err) throw err;
-
 
   // Show User message
   console.log('Check out our selection...\n');
@@ -62,8 +58,6 @@ connection.query('SELECT * FROM Products', function (err, res) {
     console.log(itemID + '|' + productName + '|' + departmentName + '|' + price + '|    ' + quantity);
   }
 
-  // =================================================================================================
-
   // After the table is shown, ask the user to buy something
   prompt.start();
 
@@ -75,7 +69,7 @@ connection.query('SELECT * FROM Products', function (err, res) {
     var buyItemID = result.buyItemID;
     console.log('You selected Item # ' + buyItemID + '.');
 
-    // Then ask for Quanity (once user completed first entry)
+    // Then ask for Quanity 
     console.log('\nHow many do you wish to buy?')
     prompt.get(['buyItemQuantity'], function (err, result) {
 
@@ -83,12 +77,12 @@ connection.query('SELECT * FROM Products', function (err, res) {
       var buyItemQuantity = result.buyItemQuantity;
       console.log('You selected to buy ' + buyItemQuantity + ' of these.');
 
-      // Once the customer has placed the order, check if store has enough of the product to meet the request
+      // Once the customer has placed the order, checks if store has enough of the product to meet the request
       connection.query('SELECT StockQuantity FROM Products WHERE ?', [{ ItemID: buyItemID }], function (err, res) {
         if (err) throw err; // Error Handler
-        // Check if the item Id was valid (i.e. something was returned from mySQL)
+        // Check if the item Id was valid
         if (res[0] == undefined) {
-          console.log('Sorry... We found no items with Item ID "' + buyItemID + '"');
+          console.log('Sorry... We are unable to locate items with Item ID "' + buyItemID + '"');
           connection.end(); // end the script/connection
         }
         // Valid Item ID, so compare Bamazon Inventory with user quantity 
@@ -100,11 +94,10 @@ connection.query('SELECT * FROM Products', function (err, res) {
             // Update mySQL database with reduced inventory
             var newInventory = parseInt(bamazonQuantity) - parseInt(buyItemQuantity); // ensure we have integers for subtraction & database
             connection.query('UPDATE Products SET ? WHERE ?', [{ StockQuantity: newInventory }, { ItemID: buyItemID }], function (err, res) {
-              if (err) throw err; // Error Handler
-            }); // end inventory update query
+              if (err) throw err;
+            });
 
-
-            // Show customer their purchase total (need to query the price info from database)
+            // Show purchase total 
             var customerTotal;
             connection.query('SELECT Price FROM Products WHERE ?', [{ ItemID: buyItemID }], function (err, res) {
 
@@ -113,43 +106,15 @@ connection.query('SELECT * FROM Products', function (err, res) {
 
               console.log('\nYour total is $' + customerTotal + '.');
 
-              // ------------------------- Re factor for Executive Challenge ------------------------
-              // Find the department for the purchase item
-              connection.query('SELECT DepartmentName FROM Products WHERE ?', [{ ItemID: buyItemID }], function (err, res) {
-                var itemDepartment = res[0].DepartmentName;
-
-                // Find the current Revenue for that department
-                connection.query('SELECT TotalSales FROM Departments WHERE ?', [{ DepartmentName: itemDepartment }], function (err, res) {
-                  var totalSales = res[0].TotalSales;
-
-                  // Calculate new sale revenue
-                  var totalSales = parseFloat(totalSales) + parseFloat(customerTotal);
-
-                  // Add the revenue from each transaction to the TotalSales column for the related department.
-                  connection.query('UPDATE Departments SET ? WHERE ?', [{ TotalSales: totalSales }, { DepartmentName: itemDepartment }], function (err, res) {
-                    if (err) throw err; // Error Handler
-                    console.log('Transaction Completed. Thank you!')
-                    connection.end(); // end the script/connection
-
-                  }); // end new revenue update query
-
-                }); // end current revenue query
-
-              }); // end department name query 
-              // -------------------------------------------------------------------------------------
-            }); // end customer purchase update query 
+            });
           }
-          // Insufficient inventory
-          else {
-            console.log('Sorry... We only have ' + bamazonQuantity + ' of that item. Order cancelled.');
-            connection.end(); // end the script/connection
-          }
+
         }
 
-      }); // end item quantity query
+      });
 
-    }); // end of prompt 2
+    });
 
-  }); // end of prompt 1
+  });
 
-}); // end of main query
+}); 
